@@ -1,10 +1,20 @@
 {
-  "name": "${PROJECT_NAME}",
+  "name": "ts-template",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" & exit 1",
+    "start": "tsc && node ./build/src/app.js"
   },
-  "private": true
+  "private": true,
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/node": "^24.0.14",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.3"
+  }
 }
