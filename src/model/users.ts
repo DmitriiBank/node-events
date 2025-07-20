@@ -36,8 +36,8 @@ export const updateUser = (newUserData:User):boolean => {
 export const removeUser = (userId:number) => {
     const index = users.findIndex(user => user.id === userId);
     if (index !== -1) {
-            const [res] = users.splice(index, 1)
-            return res
+            const res = users.splice(index, 1)
+            return res[0]
     }
         return null
 }

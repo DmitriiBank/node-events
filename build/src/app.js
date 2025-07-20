@@ -40,8 +40,8 @@ sayHi(myName);
 // }
 const myServer = createServer((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { url, method } = req;
-    const userIdMatch = url === null || url === void 0 ? void 0 : url.match(/^\/api\/users\/(\d+)$/);
-    const userId = userIdMatch ? Number(userIdMatch[1]) : null;
+    const parsedUrl = new URL(url, "http://localhost:3005");
+    let user;
     function parseBody(req) {
         return new Promise((resolve, reject) => {
             let body = "";
@@ -58,11 +58,11 @@ const myServer = createServer((req, res) => __awaiter(void 0, void 0, void 0, fu
             });
         });
     }
-    switch (url + method) {
+    switch (parsedUrl.pathname + method) {
         case "/api/users" + "POST": {
             const body = yield parseBody(req);
-            if (body) {
-                addUser(body);
+            const isSuccess = addUser(body);
+            if (isSuccess) {
                 res.writeHead(201, { "Content-Type": "text/plain" });
                 res.end('User was added');
             }
@@ -90,9 +90,10 @@ const myServer = createServer((req, res) => __awaiter(void 0, void 0, void 0, fu
             }
             break;
         }
-        case `/api/users/${userId}` + "DELETE": {
-            if (userId) {
-                const deleted = removeUser(userId);
+        case "/api/users" + "DELETE": {
+            user = (yield parseBody(req));
+            const deleted = removeUser(user.id);
+            if (deleted) {
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(JSON.stringify(deleted));
             }
@@ -103,19 +104,27 @@ const myServer = createServer((req, res) => __awaiter(void 0, void 0, void 0, fu
             break;
         }
         case "/api/users" + "GET": {
+            const users = getAllUsers();
             res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify(getAllUsers()));
+            res.end(JSON.stringify(users));
             break;
         }
-        case `/api/users/${userId}` + "GET": {
-            if (userId) {
-                const user = getUser(userId);
-                res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify(user));
-            }
-            else {
+        case "/api/user" + "GET": {
+            const id = parsedUrl.searchParams.get('userId');
+            if (!id) {
                 res.writeHead(404, { "Content-Type": "text/plain" });
                 res.end("User not found");
+            }
+            else {
+                const founded = getUser(+id);
+                if (founded !== null) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(founded));
+                }
+                else {
+                    res.writeHead(404, { 'Content-Type': 'text/html' });
+                    res.end('User not found');
+                }
             }
             break;
         }

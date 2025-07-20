@@ -1,5 +1,4 @@
-import {sayHi} from "./tools.ts";
-import EventEmitter from "node:events";
+
 import {createServer, IncomingMessage} from "node:http";
 import {
     addUser,
@@ -9,43 +8,12 @@ import {
     User
 } from "./model/users.js";
 
-const myName = "Konstantin"
-sayHi(myName);
-
-// const myEmitter = new EventEmitter();
-
-// myEmitter.on('eventName', (value1, value2) => {
-//     console.log("myEvent")
-// })
-
-// myEmitter.emit('eventName', [value1, value2])
-//
-// myEmitter.on('less_than_0.5', (val) => {
-//     console.log(`${val} < 0.5`)
-// })
-// myEmitter.on('greater_than_0.5', (val) => {
-//     console.log(`${val} > 0.5`)
-// })
-// myEmitter.on('equal_0.5', (val) => {
-//     console.log(`${val} = 0.5`)
-// })
-//
-//
-// for (let i = 0; i < 10; i++) {
-//     let rand = Math.random()
-//     if (rand === 0.5)
-//         myEmitter.emit('equal_0.5', rand);
-//     else if (rand < 0.5)
-//         myEmitter.emit('less_than_0.5', rand);
-//     else if (rand > 0.5)
-//         myEmitter.emit('greater_than_0.5', rand);
-// }
 
 const myServer = createServer(async (req, res) => {
     const {url, method} = req;
+    const parsedUrl = new URL(url!, "http://localhost:3005")
+    let user: User
 
-    const userIdMatch = url?.match(/^\/api\/users\/(\d+)$/);
-    const userId = userIdMatch ? Number(userIdMatch[1]) : null;
 
     function parseBody(req: InstanceType<typeof IncomingMessage>) {
         return new Promise((resolve, reject) => {
@@ -63,11 +31,11 @@ const myServer = createServer(async (req, res) => {
         })
     }
 
-    switch (url! + method) {
+    switch (parsedUrl.pathname + method) {
         case "/api/users" + "POST": {
             const body = await parseBody(req)
-            if (body) {
-                addUser(body as User)
+            const isSuccess = addUser(body as User);
+            if (isSuccess) {
                 res.writeHead(201, {"Content-Type": "text/plain"})
                 res.end('User was added')
             } else {
@@ -79,24 +47,25 @@ const myServer = createServer(async (req, res) => {
         case "/api/users" + "PUT": {
             const body = await parseBody(req) as User | null;
             if (!body || !body.id) {
-                res.writeHead(400, { "Content-Type": "text/plain" });
+                res.writeHead(400, {"Content-Type": "text/plain"});
                 res.end("Invalid user data");
                 return;
             }
 
             const isUpdated = updateUser(body);
             if (isUpdated) {
-                res.writeHead(200, { "Content-Type": "text/plain" });
+                res.writeHead(200, {"Content-Type": "text/plain"});
                 res.end("User was updated");
             } else {
-                res.writeHead(404, { "Content-Type": "text/plain" });
+                res.writeHead(404, {"Content-Type": "text/plain"});
                 res.end("User not found");
             }
             break;
         }
-        case `/api/users/${userId}` + "DELETE": {
-            if (userId) {
-                const deleted = removeUser(userId);
+        case "/api/users" + "DELETE": {
+            user = await parseBody(req) as User;
+            const deleted = removeUser(user.id)
+            if (deleted) {
                 res.writeHead(200, {"Content-Type": "application/json"});
                 res.end(JSON.stringify(deleted));
             } else {
@@ -106,18 +75,26 @@ const myServer = createServer(async (req, res) => {
             break;
         }
         case "/api/users" + "GET": {
+            const users = getAllUsers();
             res.writeHead(200, {"Content-Type": "application/json"})
-            res.end(JSON.stringify(getAllUsers()))
+            res.end(JSON.stringify(users))
             break;
         }
-        case `/api/users/${userId}` + "GET": {
-            if (userId) {
-                const user = getUser(userId);
-                res.writeHead(200, {"Content-Type": "application/json"});
-                res.end(JSON.stringify(user));
-            } else {
+        case "/api/user" + "GET": {
+            const id = parsedUrl.searchParams.get('userId')
+
+            if (!id) {
                 res.writeHead(404, {"Content-Type": "text/plain"});
                 res.end("User not found");
+            } else {
+                const founded = getUser(+id);
+                if(founded!==null){
+                    res.writeHead(200, {'Content-Type': 'application/json'})
+                    res.end(JSON.stringify(founded))
+                } else {
+                    res.writeHead(404, {'Content-Type': 'text/html'})
+                    res.end('User not found')
+                }
             }
             break;
         }

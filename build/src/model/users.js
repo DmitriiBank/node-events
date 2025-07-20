@@ -23,8 +23,8 @@ export const updateUser = (newUserData) => {
 export const removeUser = (userId) => {
     const index = users.findIndex(user => user.id === userId);
     if (index !== -1) {
-        const [res] = users.splice(index, 1);
-        return res;
+        const res = users.splice(index, 1);
+        return res[0];
     }
     return null;
 };
