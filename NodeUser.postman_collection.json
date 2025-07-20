@@ -98,14 +98,26 @@
 		},
 		{
 			"name": "getUser",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
 			"request": {
 				"auth": {
 					"type": "noauth"
 				},
 				"method": "GET",
 				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
 				"url": {
-					"raw": "http://localhost:3005/api/users/2",
+					"raw": "http://localhost:3005/api/user?userId=1",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -113,8 +125,13 @@
 					"port": "3005",
 					"path": [
 						"api",
-						"users",
-						"2"
+						"user"
+					],
+					"query": [
+						{
+							"key": "userId",
+							"value": "1"
+						}
 					]
 				}
 			},
@@ -128,8 +145,17 @@
 				},
 				"method": "DELETE",
 				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 3,\n    \"userName\": \"Watson\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
 				"url": {
-					"raw": "http://localhost:3005/api/users/2",
+					"raw": "http://localhost:3005/api/users",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -137,8 +163,7 @@
 					"port": "3005",
 					"path": [
 						"api",
-						"users",
-						"2"
+						"users"
 					]
 				}
 			},
