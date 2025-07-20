@@ -7,38 +7,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { sayHi } from "./tools.js";
 import { createServer } from "node:http";
 import { addUser, getAllUsers, getUser, removeUser, updateUser } from "./model/users.js";
-const myName = "Konstantin";
-sayHi(myName);
-// const myEmitter = new EventEmitter();
-// myEmitter.on('eventName', (value1, value2) => {
-//     console.log("myEvent")
-// })
-// myEmitter.emit('eventName', [value1, value2])
-//
-// myEmitter.on('less_than_0.5', (val) => {
-//     console.log(`${val} < 0.5`)
-// })
-// myEmitter.on('greater_than_0.5', (val) => {
-//     console.log(`${val} > 0.5`)
-// })
-// myEmitter.on('equal_0.5', (val) => {
-//     console.log(`${val} = 0.5`)
-// })
-//
-//
-// for (let i = 0; i < 10; i++) {
-//     let rand = Math.random()
-//     if (rand === 0.5)
-//         myEmitter.emit('equal_0.5', rand);
-//     else if (rand < 0.5)
-//         myEmitter.emit('less_than_0.5', rand);
-//     else if (rand > 0.5)
-//         myEmitter.emit('greater_than_0.5', rand);
-// }
+import { myLogger } from "./events/logger.js";
 const myServer = createServer((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    myLogger.log('We got the request');
     const { url, method } = req;
     const parsedUrl = new URL(url, "http://localhost:3005");
     let user;
@@ -63,12 +36,17 @@ const myServer = createServer((req, res) => __awaiter(void 0, void 0, void 0, fu
             const body = yield parseBody(req);
             const isSuccess = addUser(body);
             if (isSuccess) {
+                myLogger.save(`User with id ${body.id} was successfully added`);
                 res.writeHead(201, { "Content-Type": "text/plain" });
                 res.end('User was added');
+                // emitter.emit('user_added')
+                myLogger.log(`Response for add user with id ${body.id} was send`);
             }
             else {
                 res.writeHead(409, { "Content-Type": "text/plain" });
                 res.end('User already exists');
+                myLogger.log(`User with id ${body.id} already exists`);
+                myLogger.save(`User with id ${body.id} already exists`);
             }
             break;
         }
@@ -96,6 +74,8 @@ const myServer = createServer((req, res) => __awaiter(void 0, void 0, void 0, fu
             if (deleted) {
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(JSON.stringify(deleted));
+                // emitter.emit('user_removed')
+                myLogger.save(`User with id ${user.id} was deleted`);
             }
             else {
                 res.writeHead(404, { "Content-Type": "text/plain" });
@@ -126,6 +106,12 @@ const myServer = createServer((req, res) => __awaiter(void 0, void 0, void 0, fu
                     res.end('User not found');
                 }
             }
+            break;
+        }
+        case '/api/logger' + 'GET': {
+            const allLogs = myLogger.getLogArray();
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(allLogs));
             break;
         }
         default:

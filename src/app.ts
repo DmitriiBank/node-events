@@ -1,4 +1,3 @@
-
 import {createServer, IncomingMessage} from "node:http";
 import {
     addUser,
@@ -7,15 +6,18 @@ import {
     updateUser,
     User
 } from "./model/users.js";
+import {emitter} from "./events/emitter.js";
+import {myLogger} from "./events/logger.js";
 
 
 const myServer = createServer(async (req, res) => {
+    myLogger.log('We got the request')
     const {url, method} = req;
     const parsedUrl = new URL(url!, "http://localhost:3005")
     let user: User
 
 
-    function parseBody(req: InstanceType<typeof IncomingMessage>) {
+    function parseBody(req: IncomingMessage) {
         return new Promise((resolve, reject) => {
             let body = "";
             req.on("data", (chunk) => {
@@ -33,14 +35,19 @@ const myServer = createServer(async (req, res) => {
 
     switch (parsedUrl.pathname + method) {
         case "/api/users" + "POST": {
-            const body = await parseBody(req)
-            const isSuccess = addUser(body as User);
+            const body = await parseBody(req) as User;
+            const isSuccess = addUser(body);
             if (isSuccess) {
+                myLogger.save(`User with id ${body.id} was successfully added`)
                 res.writeHead(201, {"Content-Type": "text/plain"})
                 res.end('User was added')
+                // emitter.emit('user_added')
+                myLogger.log(`Response for add user with id ${body.id} was send`)
             } else {
                 res.writeHead(409, {"Content-Type": "text/plain"})
                 res.end('User already exists')
+                myLogger.log(`User with id ${body.id} already exists`)
+                myLogger.save(`User with id ${body.id} already exists`)
             }
             break;
         }
@@ -68,6 +75,8 @@ const myServer = createServer(async (req, res) => {
             if (deleted) {
                 res.writeHead(200, {"Content-Type": "application/json"});
                 res.end(JSON.stringify(deleted));
+                // emitter.emit('user_removed')
+                myLogger.save(`User with id ${user.id} was deleted`)
             } else {
                 res.writeHead(404, {"Content-Type": "text/plain"});
                 res.end("User not found");
@@ -82,13 +91,12 @@ const myServer = createServer(async (req, res) => {
         }
         case "/api/user" + "GET": {
             const id = parsedUrl.searchParams.get('userId')
-
             if (!id) {
                 res.writeHead(404, {"Content-Type": "text/plain"});
                 res.end("User not found");
             } else {
                 const founded = getUser(+id);
-                if(founded!==null){
+                if (founded !== null) {
                     res.writeHead(200, {'Content-Type': 'application/json'})
                     res.end(JSON.stringify(founded))
                 } else {
@@ -97,6 +105,12 @@ const myServer = createServer(async (req, res) => {
                 }
             }
             break;
+        }
+        case '/api/logger' + 'GET': {
+            const allLogs = myLogger.getLogArray()
+            res.writeHead(200, {'Content-Type': 'application/json'})
+            res.end(JSON.stringify(allLogs))
+            break
         }
         default:
             res.writeHead(404, {"Content-Type": "text/plain"})
